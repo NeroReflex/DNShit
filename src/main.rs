@@ -46,6 +46,10 @@ async fn main() -> std::io::Result<()> {
                         let lookups = questions.iter().map(|q| {
                             let hostname_with_port = q.qname() + ":555";
                 
+                            if (q.qtype() != 1) { // 1 is A (IPv4)
+                                return DnsLookupResult::Failed;
+                            }
+
                             match hostname_with_port.as_str().to_socket_addrs() {
                                 Ok(a) => {
                                     match a.filter_map(|addr| match (addr.is_ipv4()) && (hostname_with_port.contains(".local")) {
