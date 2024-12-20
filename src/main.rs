@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
                         let lookups = questions.iter().map(|q| {
                             let hostname_with_port = q.qname() + ":555";
                 
-                            if (q.qtype() != 1) { // 1 is A (IPv4)
+                            if q.qtype() != 1 { // 1 is A (IPv4)
                                 return DnsLookupResult::Failed;
                             }
 

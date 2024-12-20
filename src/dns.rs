@@ -180,6 +180,8 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
 
     let names = question.qname.split('.').into_iter().map(|e| String::from(e)).collect::<Vec<String>>();
 
+    let ptr = (response.len() - 1usize) as u16;
+
     // Construct the question section
     for e in names {
         response.push(e.len() as u8);
@@ -200,9 +202,11 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
         address: ip_address,
     };
 
-    // Answer name (using compression, for simplicity we just repeat the name)
-    /*response.extend(qname_bytes);*/
-    response.push(0); // Null terminator for the name
+    response.extend(&ptr.to_be_bytes()); // hostname pointer
+
+    let ptr_idx = response.len() - 2;
+    response[ptr_idx] |= 0b11000000u8;
+
     response.extend(&answer.qtype.to_be_bytes());
     response.extend(&answer.qclass.to_be_bytes());
     response.extend(&answer.ttl.to_be_bytes());
