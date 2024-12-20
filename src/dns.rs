@@ -180,7 +180,7 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
 
     let names = question.qname.split('.').into_iter().map(|e| String::from(e)).collect::<Vec<String>>();
 
-    let ptr = (response.len() - 1usize) as u16;
+    let ptr = response.len() as u16;
 
     // Construct the question section
     for e in names {
