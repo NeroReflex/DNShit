@@ -172,7 +172,7 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
     header_bytes.push(flags_1);
     header_bytes.push(flags_2);
     header_bytes.extend(&header.qdcount.to_be_bytes());
-    header_bytes.extend(&header.ancount.to_be_bytes());
+    header_bytes.extend((1u16).to_be_bytes()); // answers count
     header_bytes.extend(&header.nscount.to_be_bytes());
     header_bytes.extend(&header.arcount.to_be_bytes());
 
