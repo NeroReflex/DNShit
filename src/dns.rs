@@ -167,8 +167,6 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
     let flags_1: u8 = /*if header.qr { 0x80 } else { 0x00 }*/ 0x80u8 | ((header.opcode & 0x0Fu8) << 3u8) | /*if header.aa { 0x04 } else { 0x00 }*/ 0x01u8 << 2u8 | if header.tc { 0x02 } else { 0x00 } | if header.rd { 0x01u8 } else { 0x00u8 };
     let flags_2: u8 = /*if header.ra { 0x80 } else { 0x00 }*/ 0x80u8 | /*if header.z {}*/ (header.rcode & 0x0fu8);
 
-    println!("{} {}", flags_1, flags_2);
-
     header_bytes.push(flags_1);
     header_bytes.push(flags_2);
     header_bytes.extend(&header.qdcount.to_be_bytes());
