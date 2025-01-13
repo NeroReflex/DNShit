@@ -12,12 +12,7 @@ impl DnsRequest {
         let header = DnsHeader::parse(&buf[0..12])?;
         let questions = parse_questions(&buf[12..], header.qdcount)?;
 
-        Ok(
-            Self {
-                header,
-                questions
-            }
-        )
+        Ok(Self { header, questions })
     }
 
     pub fn header(&self) -> DnsHeader {
@@ -54,23 +49,21 @@ impl DnsHeader {
         let nscount = buf[8..10].try_into().map_err(|_| Error::ParseError)?;
         let arcount = buf[10..12].try_into().map_err(|_| Error::ParseError)?;
 
-        Ok(
-            Self {
-                id: u16::from_be_bytes(id),
-                qr: (buf[2] & 0b10000000) != 0,
-                opcode: (buf[2] & 0b01111000) >> 3,
-                aa: (buf[2] & 0b00000100) != 0,
-                tc: (buf[2] & 0b00000010) != 0,
-                rd: (buf[2] & 0b00000001) != 0,
-                ra: (buf[3] & 0b10000000) != 0,
-                z: (buf[3] & 0b01110000) >> 4,
-                rcode: buf[3] & 0b00001111,
-                qdcount: u16::from_be_bytes(qdcount),
-                ancount: u16::from_be_bytes(ancount),
-                nscount: u16::from_be_bytes(nscount),
-                arcount: u16::from_be_bytes(arcount),
-            }
-        )
+        Ok(Self {
+            id: u16::from_be_bytes(id),
+            qr: (buf[2] & 0b10000000) != 0,
+            opcode: (buf[2] & 0b01111000) >> 3,
+            aa: (buf[2] & 0b00000100) != 0,
+            tc: (buf[2] & 0b00000010) != 0,
+            rd: (buf[2] & 0b00000001) != 0,
+            ra: (buf[3] & 0b10000000) != 0,
+            z: (buf[3] & 0b01110000) >> 4,
+            rcode: buf[3] & 0b00001111,
+            qdcount: u16::from_be_bytes(qdcount),
+            ancount: u16::from_be_bytes(ancount),
+            nscount: u16::from_be_bytes(nscount),
+            arcount: u16::from_be_bytes(arcount),
+        })
     }
 }
 
@@ -97,7 +90,7 @@ impl DnsQuestion {
     fn parse_qname(buf: &[u8]) -> (String, usize) {
         let mut name = String::new();
         let mut offset = 0;
-    
+
         while buf[offset] != 0 {
             let len = buf[offset] as usize;
             offset += 1;
@@ -105,15 +98,15 @@ impl DnsQuestion {
             name.push('.');
             offset += len;
         }
-    
+
         // Remove the trailing dot
         if !name.is_empty() {
             name.pop();
         }
-    
+
         // Move past the null byte
         offset += 1;
-    
+
         (name, offset)
     }
 
@@ -122,12 +115,27 @@ impl DnsQuestion {
 
         let (qname, len) = Self::parse_qname(&buf[offset..]);
         offset += len;
-        let qtype = u16::from_be_bytes(buf[offset..offset + 2].try_into().map_err(|_err| Error::ParseError)?);
+        let qtype = u16::from_be_bytes(
+            buf[offset..offset + 2]
+                .try_into()
+                .map_err(|_err| Error::ParseError)?,
+        );
         offset += 2;
-        let qclass = u16::from_be_bytes(buf[offset..offset + 2].try_into().map_err(|_err| Error::ParseError)?);
+        let qclass = u16::from_be_bytes(
+            buf[offset..offset + 2]
+                .try_into()
+                .map_err(|_err| Error::ParseError)?,
+        );
         offset += 2;
 
-        Ok((Self { qname, qtype, qclass }, offset))
+        Ok((
+            Self {
+                qname,
+                qtype,
+                qclass,
+            },
+            offset,
+        ))
     }
 }
 
@@ -157,7 +165,11 @@ struct DnsAnswer {
 }
 
 /// Use https://en.wikipedia.org/wiki/Domain_Name_System to build the answer
-pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address: [u8; 4]) -> Vec<u8> {
+pub fn create_dns_response(
+    header: DnsHeader,
+    question: &DnsQuestion,
+    ip_address: [u8; 4],
+) -> Vec<u8> {
     let mut response = Vec::new();
 
     // Construct the DNS header
@@ -176,7 +188,12 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
 
     response.extend(header_bytes);
 
-    let names = question.qname.split('.').into_iter().map(|e| String::from(e)).collect::<Vec<String>>();
+    let names = question
+        .qname
+        .split('.')
+        .into_iter()
+        .map(|e| String::from(e))
+        .collect::<Vec<String>>();
 
     let ptr = response.len() as u16;
 
@@ -195,7 +212,7 @@ pub fn create_dns_response(header: DnsHeader, question: &DnsQuestion, ip_address
         name: question.qname.clone(),
         qtype: question.qtype,
         qclass: question.qclass,
-        ttl: 300, // Time to live
+        ttl: 300,    // Time to live
         data_len: 4, // Length of the IPv4 address
         address: ip_address,
     };

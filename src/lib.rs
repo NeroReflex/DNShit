@@ -1,2 +1,2 @@
-pub mod prelude;
 pub mod dns;
+pub mod prelude;
